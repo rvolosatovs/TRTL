@@ -2,11 +2,11 @@
 Best rescue robot evar
 
 # Progress
-- [ ] Camera
+- [x] Camera
+    - [x] Can rotate
+- [x] Wheels
     - [ ] Can rotate
-- [ ] Wheels
-    - [ ] Can rotate
-    - [ ] Can move forwards/backwards
+    - [x] Can move forwards/backwards
 - [ ] Gripper
     - [ ] Can move forwards/backwards
     - [ ] Can move up/down
