@@ -24,28 +24,27 @@ int camera_pos_Y = 90;
 int camera_servo_X_pin = 5;
 int camera_servo_Y_pin = 6;
 
-Servo grabber_arm_servo;
-Servo grabber_pull_servo;
-bool arm_lowered = true;
-bool puller_contracted = true;
-int grabber_arm_servo_pin= 3;
-int grabber_pull_servo_pin= 9;
-int GRABBER_PULL_SERVO_START = 60; 
-int GRABBER_PULL_SERVO_STOP = 120;
-int GRABBER_ARM_SERVO_START = 60; 
-int GRABBER_ARM_SERVO_STOP = 120;
+Servo grabber_servo;
+Servo puller_servo;
+int grabber_servo_pin= 3;
+int puller_servo_pin= 9;
 
-int motor_A_enable = 10;
-int motor_A_direction_A = 4;
-int motor_A_direction_B = 7;
+int PULLER_SERVO_START = 25; 
+int PULLER_SERVO_STOP = 150;
 
-int motor_B_enable = 11;
-int motor_B_direction_A = 12;
-int motor_B_direction_B = 13;
+int GRABBER_SERVO_START = 150; 
+int GRABBER_SERVO_FIRST = 80;
+int GRABBER_SERVO_SECOND = 65;
+int GRABBER_SERVO_STOP = 50;
 
-// Motors = 10,11 PWM A/B
-// Directions = 4,7  mot. A
-// Directions = 12,13 mot. B
+
+int motor_left_enable = 10;
+int motor_left_forward = 4;
+int motor_left_backward = 7;
+
+int motor_right_enable = 11;
+int motor_right_forward = 12;
+int motor_right_backward = 13;
 
 void setup() {
     camera_servo_X.attach(camera_servo_X_pin);
@@ -54,121 +53,174 @@ void setup() {
     camera_servo_Y.attach(camera_servo_Y_pin);
     camera_servo_Y.write(camera_pos_Y);
 
-    grabber_arm_servo.attach(grabber_arm_servo_pin);
-    grabber_arm_servo.write(GRABBER_ARM_SERVO_START);
+    digitalWrite(motor_left_enable, HIGH);
+    digitalWrite(motor_left_forward, LOW);
+    digitalWrite(motor_left_backward, LOW);
 
-    grabber_pull_servo.attach(grabber_pull_servo_pin);
-    grabber_pull_servo.write(GRABBER_PULL_SERVO_START);
-
-    digitalWrite(motor_A_enable, HIGH);
-    digitalWrite(motor_A_direction_A, LOW);
-    digitalWrite(motor_A_direction_B, LOW);
-
-    digitalWrite(motor_B_enable, HIGH);
-    digitalWrite(motor_B_direction_A, LOW);
-    digitalWrite(motor_B_direction_B, LOW);
+    digitalWrite(motor_right_enable, HIGH);
+    digitalWrite(motor_right_forward, LOW);
+    digitalWrite(motor_right_backward, LOW);
 
 
-    Serial.begin(9600); // in case of USB connection
-    //Serial1.begin(115200); // in case of ethernet cable or WiFi
+    Serial.begin(9600); // in case of ethernet cable or WiFi
+    /*Serial1.begin(115200); // in case of ethernet cable or WiFi*/
 
     // wait, give enough time for the communications processor to wake up
-    WaitAndBlink(60000);
+    /*WaitAndBlink(60000);*/
 
     // clear the input buffer
     while (Serial.available())
-        Serial.read();
-    //while (Serial1.available())
-    //   Serial1.read();  
+        Serial.read();  
 }
 
 void loop() {
     if(Serial.available() > 0) {
-        /*if(Serial1.available() > 0) {*/
 
         char Command = Serial.read();
-        //char Command = Serial1.read();
 
         switch(Command) {
-            /**
-             *   Motors
-             */
-            case 'o':
-                // stop
-                digitalWrite(motor_A_direction_A, LOW);
-                digitalWrite(motor_A_direction_B, LOW);
+            case 'h':
+                // left
+                digitalWrite(motor_left_forward, LOW);
+                digitalWrite(motor_left_backward, HIGH);
 
-                digitalWrite(motor_B_direction_A, LOW);
-                digitalWrite(motor_B_direction_B, LOW);
+                digitalWrite(motor_right_forward, HIGH);
+                digitalWrite(motor_right_backward, LOW);
                 break;
-            case ';':
+            case 'j':
                 // backwards
-                digitalWrite(motor_A_direction_A, HIGH);
-                digitalWrite(motor_A_direction_B, LOW);
+                digitalWrite(motor_left_forward, LOW);
+                digitalWrite(motor_left_backward, HIGH);
 
-                digitalWrite(motor_B_direction_A, LOW);
-                digitalWrite(motor_B_direction_B, HIGH);
+                digitalWrite(motor_right_forward, LOW);
+                digitalWrite(motor_right_backward, HIGH);
                 break;
-            case 'p':
+            case 'k':
                 // forwards
-                digitalWrite(motor_A_direction_A, LOW);
-                digitalWrite(motor_A_direction_B, HIGH);
+                digitalWrite(motor_left_forward, HIGH);
+                digitalWrite(motor_left_backward, LOW);
 
-                digitalWrite(motor_B_direction_A, HIGH);
-                digitalWrite(motor_B_direction_B, LOW);
+                digitalWrite(motor_right_forward, HIGH);
+                digitalWrite(motor_right_backward, LOW);
                 break;
             case 'l':
-                // left
-                digitalWrite(motor_A_direction_A, HIGH);
-                digitalWrite(motor_A_direction_B, LOW);
-
-                digitalWrite(motor_B_direction_A, HIGH);
-                digitalWrite(motor_B_direction_B, LOW);
-                break;  
-            case '\'':
                 // right
-                digitalWrite(motor_A_direction_A, LOW);
-                digitalWrite(motor_A_direction_B, HIGH);
+                digitalWrite(motor_left_forward, HIGH);
+                digitalWrite(motor_left_backward, LOW);
 
-                digitalWrite(motor_B_direction_A, LOW);
-                digitalWrite(motor_B_direction_B, HIGH);
+                digitalWrite(motor_right_forward, LOW);
+                digitalWrite(motor_right_backward, HIGH);
+                break;  
+            case 'n':
+                // stop
+                digitalWrite(motor_left_forward, LOW);
+                digitalWrite(motor_left_backward, LOW);
+
+                digitalWrite(motor_right_forward, LOW);
+                digitalWrite(motor_right_backward, LOW);
                 break;
 
-                /**
-                 *   Camera
-                 */
-            case 'w':
-                // up
-                camera_pos_Y += 5;
-                camera_servo_Y.write(camera_pos_Y);
-                break;
             case 's':
-                // down
-                camera_pos_Y -= 5;
-                camera_servo_Y.write(camera_pos_Y);
-                break;
-            case 'a':
                 // left
                 camera_pos_X += 5;
                 camera_servo_X.write(camera_pos_X);
                 break;
             case 'd':
+                // down
+                camera_pos_Y -= 5;
+                camera_servo_Y.write(camera_pos_Y);
+                break;
+            case 'f':
+                // up
+                camera_pos_Y += 5;
+                camera_servo_Y.write(camera_pos_Y);
+                break;
+            case 'g':
                 // right
                 camera_pos_X -= 5;
                 camera_servo_X.write(camera_pos_X);
                 break;
-                /**
-                 *   Grabber
-                 */
 
-            case 'e':
-                grabber_arm_servo.write(GRABBER_ARM_SERVO_STOP);
-                grabber_pull_servo.write(GRABBER_PULL_SERVO_STOP);
-                break;
             case 'r':
-                grabber_arm_servo.write(GRABBER_ARM_SERVO_START);
-                grabber_pull_servo.write(GRABBER_PULL_SERVO_START);
+                grabber_down();
+                break;
+
+            case 't':
+                grab();
+                break;
+
+            case 'y':
+                pull();
+                break;
+
+            case 'x':
+                digitalWrite(ledPin, LOW);
+                break;
+
+            case 'c':
+                digitalWrite(ledPin, HIGH);
                 break;
         }
     }
+}
+
+void grabber_down() {
+    puller_servo.attach(puller_servo_pin);
+    grabber_servo.attach(grabber_servo_pin);
+
+    puller_servo.write(PULLER_SERVO_START);
+    delay(1500);
+    grabber_servo.write(GRABBER_SERVO_FIRST);
+    delay(100);
+    grabber_servo.write(GRABBER_SERVO_START);
+    delay(2000);
+
+    puller_servo.detach();
+    grabber_servo.detach();
+}
+
+int n = 0;
+void grab() {
+    n++;
+    switch (n) {
+        case 0:
+            puller_servo.attach(puller_servo_pin);
+            break;
+        case 1:
+            puller_servo.write(PULLER_SERVO_STOP);
+            break;
+        case 2:
+            puller_servo.write(130);
+            break;
+        case 3:
+            puller_servo.detach();
+            break;
+        case 4:
+            grabber_servo.attach(grabber_servo_pin);
+            break;
+        case 5:
+            grabber_servo.write(GRABBER_SERVO_START);
+            break;
+        case 6:
+            grabber_servo.detach();
+            n=0;
+            break;
+    }
+}
+
+void pull() {
+    puller_servo.attach(puller_servo_pin);
+    grabber_servo.attach(grabber_servo_pin);
+
+    grabber_servo.write(GRABBER_SERVO_FIRST);
+    delay(1000);
+    puller_servo.write(PULLER_SERVO_STOP);
+    delay(1500);
+    grabber_servo.write(GRABBER_SERVO_SECOND);
+    delay(500);
+    grabber_servo.write(GRABBER_SERVO_STOP);
+    delay(800);
+
+    puller_servo.detach();
+    grabber_servo.detach();
 }
