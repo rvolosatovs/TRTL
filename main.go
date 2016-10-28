@@ -104,38 +104,51 @@ func main() {
 				// Camera
 
 				case 300:
+					// Triangle
 					trtl.look(up)
 				case 301:
+					// Circle
 					trtl.look(right)
 				case 302:
+					// Cross
 					trtl.look(down)
 				case 303:
+					// Square
 					trtl.look(left)
 
 				// Drivetrain
 
 				case 292:
+					// Up arrow
 					trtl.drive(up)
 				case 293:
+					// Right arrow
 					trtl.drive(right)
 				case 294:
+					// Down arrow
 					trtl.drive(down)
 				case 295:
+					// Left arrow
 					trtl.drive(left)
 
 				// Grabber
 
 				case 296:
+					// L2
 					trtl.grabberMiddle()
-				case 297:
-					trtl.ledOn()
-
 				case 298:
+					// L1
 					trtl.grabberUp()
 				case 299:
+					// R1
 					trtl.pullerMove()
 
 				// Led
+
+				case 297:
+					// R2
+					trtl.ledOn()
+
 				default:
 					log.WithField("scancode", key.Scancode).Warn("unknown key")
 				}
