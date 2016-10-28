@@ -49,10 +49,10 @@ func main() {
 	log.Info("opening connection")
 	arduino, err := serial.OpenPort(&serial.Config{Name: viper.GetString("serial-port"), Baud: viper.GetInt("baud")})
 	if err != nil {
-		log.WithError(err).Fatal("cant connect to arduino")
+		log.WithError(err).Fatal("Can't connect to Arduino")
 	}
 	trtl := &trtl{arduino: arduino}
-	log.Info("connected")
+	log.Info("Arduino connected")
 
 	var js *evdev.InputDevice
 	for range time.Tick(time.Second) {
@@ -81,8 +81,6 @@ func main() {
 					continue
 				}
 
-				log.WithField("keycode", key.Scancode).Debug("")
-
 				switch key.Scancode {
 
 				// Camera
@@ -110,19 +108,16 @@ func main() {
 				// Grabber
 
 				case 296:
-					trtl.graberDown()
-				case 289:
-					trtl.pull()
-				case 290:
-					trtl.grab()
+					trtl.grabberMiddle()
+				case 297:
+					trtl.ledOn()
+
+				case 298:
+					trtl.grabberUp()
+				case 299:
+					trtl.pullerMove()
 
 				// Led
-
-				case 299:
-					trtl.ledOn()
-				case 297:
-					trtl.ledOff()
-
 				default:
 					trtl.ledOn()
 
@@ -133,7 +128,7 @@ func main() {
 	}
 }
 
-type direction int8
+type direction uint8
 
 const (
 	up direction = iota
@@ -204,16 +199,33 @@ func (t *trtl) look(d direction) {
 
 	mustSend(t.arduino, b)
 }
+
 func (t *trtl) stop() {
 	mustSend(t.arduino, 'n')
 }
 
-func (t *trtl) graberDown() {
-	mustSend(t.arduino, 'r')
+func (t *trtl) grabberUp() {
+	mustSend(t.arduino, 'y')
 }
-func (t *trtl) grab() {
+
+func (t *trtl) grabberMiddle() {
 	mustSend(t.arduino, 't')
 }
-func (t *trtl) pull() {
-	mustSend(t.arduino, 'y')
+
+var pullerRetracted bool
+
+func (t *trtl) pullerMove() {
+	if pullerRetracted {
+		t.pullerContract()
+	} else {
+		t.pullerRetract()
+	}
+	pullerRetracted = !pullerRetracted
+}
+
+func (t *trtl) pullerRetract() {
+	mustSend(t.arduino, 'q')
+}
+func (t *trtl) pullerContract() {
+	mustSend(t.arduino, 'w')
 }

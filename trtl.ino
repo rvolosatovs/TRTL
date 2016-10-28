@@ -29,22 +29,24 @@ Servo puller_servo;
 int grabber_servo_pin= 3;
 int puller_servo_pin= 9;
 
-int PULLER_SERVO_START = 25; 
-int PULLER_SERVO_STOP = 150;
+// Puller
+int PULLER_SERVO_RETRACT = 120;
+int PULLER_SERVO_CONTRACT = 25; 
 
-int GRABBER_SERVO_START = 150; 
-int GRABBER_SERVO_FIRST = 80;
-int GRABBER_SERVO_SECOND = 65;
-int GRABBER_SERVO_STOP = 50;
+// Grabber
+int GRABBER_SERVO_UP = 150; 
+int GRABBER_SERVO_MIDDLE = 80; 
 
 
 int motor_left_enable = 10;
-int motor_left_forward = 4;
-int motor_left_backward = 7;
+int motor_left_backward = 4;
+int motor_left_forward = 7;
 
 int motor_right_enable = 11;
-int motor_right_forward = 12;
-int motor_right_backward = 13;
+int motor_right_backward = 12;
+int motor_right_forward = 13;
+
+int wifi = 0;
 
 void setup() {
     camera_servo_X.attach(camera_servo_X_pin);
@@ -62,30 +64,43 @@ void setup() {
     digitalWrite(motor_right_backward, LOW);
 
 
-    Serial.begin(9600); // in case of ethernet cable or WiFi
-    /*Serial1.begin(115200); // in case of ethernet cable or WiFi*/
+    if (wifi) {
+        Serial1.begin(115200);
 
-    // wait, give enough time for the communications processor to wake up
-    /*WaitAndBlink(60000);*/
+        WaitAndBlink(60000);
 
-    // clear the input buffer
-    while (Serial.available())
-        Serial.read();  
+        while (Serial1.available())
+            Serial1.read();  
+    } else {
+        Serial.begin(9600);
+
+        while (Serial.available())
+            Serial.read();  
+    }
 }
 
 void loop() {
-    if(Serial.available() > 0) {
+    int av;
+    if (wifi)
+        av = Serial1.available();
+    else
+        av = Serial.available();
 
-        char Command = Serial.read();
+    if(av > 0) {
+        char c;
+        if (wifi)
+            c = Serial1.read();
+        else
+            c = Serial.read();
 
-        switch(Command) {
+        switch(c) {
             case 'h':
                 // left
                 digitalWrite(motor_left_forward, LOW);
                 digitalWrite(motor_left_backward, HIGH);
 
-                digitalWrite(motor_right_forward, HIGH);
                 digitalWrite(motor_right_backward, LOW);
+                digitalWrite(motor_right_forward, HIGH);
                 break;
             case 'j':
                 // backwards
@@ -108,8 +123,8 @@ void loop() {
                 digitalWrite(motor_left_forward, HIGH);
                 digitalWrite(motor_left_backward, LOW);
 
-                digitalWrite(motor_right_forward, LOW);
                 digitalWrite(motor_right_backward, HIGH);
+                digitalWrite(motor_right_forward, LOW);
                 break;  
             case 'n':
                 // stop
@@ -141,16 +156,20 @@ void loop() {
                 camera_servo_X.write(camera_pos_X);
                 break;
 
-            case 'r':
-                grabber_down();
+            case 'q':
+                puller_retract();
+                break;
+
+            case 'w':
+                puller_contract();
                 break;
 
             case 't':
-                grab();
+                grabber_middle();
                 break;
 
             case 'y':
-                pull();
+                grabber_up();
                 break;
 
             case 'x':
@@ -164,63 +183,44 @@ void loop() {
     }
 }
 
-void grabber_down() {
-    puller_servo.attach(puller_servo_pin);
+void grabber_middle() {
     grabber_servo.attach(grabber_servo_pin);
+    grabber_servo.write(GRABBER_SERVO_MIDDLE);
+}
 
-    puller_servo.write(PULLER_SERVO_START);
-    delay(1500);
-    grabber_servo.write(GRABBER_SERVO_FIRST);
-    delay(100);
-    grabber_servo.write(GRABBER_SERVO_START);
+void grabber_up() {
+    grabber_servo.attach(grabber_servo_pin);
+    grabber_servo.write(GRABBER_SERVO_UP);
     delay(2000);
-
-    puller_servo.detach();
     grabber_servo.detach();
 }
 
-int n = 0;
-void grab() {
-    n++;
-    switch (n) {
-        case 0:
-            puller_servo.attach(puller_servo_pin);
-            break;
-        case 1:
-            puller_servo.write(PULLER_SERVO_STOP);
-            break;
-        case 2:
-            puller_servo.write(130);
-            break;
-        case 3:
-            puller_servo.detach();
-            break;
-        case 4:
-            grabber_servo.attach(grabber_servo_pin);
-            break;
-        case 5:
-            grabber_servo.write(GRABBER_SERVO_START);
-            break;
-        case 6:
-            grabber_servo.detach();
-            n=0;
-            break;
-    }
-}
-
-void pull() {
+void puller_retract() {
     puller_servo.attach(puller_servo_pin);
-    grabber_servo.attach(grabber_servo_pin);
+    puller_servo.write(PULLER_SERVO_RETRACT);
+    delay(2500);
 
-    grabber_servo.write(GRABBER_SERVO_FIRST);
-    delay(1000);
-    puller_servo.write(PULLER_SERVO_STOP);
-    delay(1500);
-    grabber_servo.write(GRABBER_SERVO_SECOND);
-    delay(500);
-    grabber_servo.write(GRABBER_SERVO_STOP);
-    delay(800);
+    grabber_servo.attach(grabber_servo_pin);
+    grabber_servo.write(45);
+    delay(300);
+    grabber_servo.detach();
 
     puller_servo.detach();
-    grabber_servo.detach();
 }
+
+void puller_contract() {
+    puller_servo.attach(puller_servo_pin);
+    puller_servo.write(PULLER_SERVO_CONTRACT);
+
+    delay(1000);
+    int pm = millis();
+    int cm = millis();
+    grabber_servo.attach(grabber_servo_pin);
+    while (cm - pm < 2000) {
+        cm = millis();
+        grabber_servo.write(60);
+    }
+    grabber_servo.detach();
+    puller_servo.detach();
+}
+
