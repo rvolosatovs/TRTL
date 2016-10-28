@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd $GOPATH/src/github.com/rvolosatovs/trtl
+make run
