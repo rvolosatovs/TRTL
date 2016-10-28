@@ -144,15 +144,6 @@ func main() {
 	}
 }
 
-type direction uint8
-
-const (
-	up direction = iota
-	down
-	right
-	left
-)
-
 func send(w io.Writer, b byte) (err error) {
 	_, err = w.Write([]byte{b})
 	return
@@ -166,6 +157,35 @@ func mustSend(w io.Writer, b byte) {
 
 type trtl struct {
 	arduino *serial.Port
+}
+
+type direction uint8
+
+const (
+	up direction = iota
+	down
+	right
+	left
+)
+
+func (t *trtl) look(d direction) {
+	var b byte
+
+	switch d {
+	case left:
+		b = 's'
+
+	case up:
+		b = 'd'
+
+	case down:
+		b = 'f'
+
+	case right:
+		b = 'g'
+	}
+
+	mustSend(t.arduino, b)
 }
 
 func (t *trtl) drive(d direction) {
@@ -183,26 +203,6 @@ func (t *trtl) drive(d direction) {
 
 	case right:
 		b = 'l'
-	}
-
-	mustSend(t.arduino, b)
-}
-
-func (t *trtl) look(d direction) {
-	var b byte
-
-	switch d {
-	case left:
-		b = 's'
-
-	case up:
-		b = 'd'
-
-	case down:
-		b = 'f'
-
-	case right:
-		b = 'g'
 	}
 
 	mustSend(t.arduino, b)
