@@ -1,5 +1,5 @@
 # Description
-TRTL is a model of a rescue mission robot designed during the Engineering Design(4WBB0) 2016-2017 course at TU/e. 
+TRTL is a model of a rescue mission robot designed during the Engineering Design(4WBB0) 2016-2017 course at TU/e by V. G. Manev, R. van der Pijl, E. M. A. Lentz, M. H. C. van Riel, R. Volosatovs and H. J. Verschoor
 
 # Design
 _(excerpt from the report)_
