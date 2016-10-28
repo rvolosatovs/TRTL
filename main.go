@@ -8,12 +8,9 @@ import (
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 	evdev "github.com/gvalkov/golang-evdev"
-	"github.com/hybridgroup/gobot"
 	"github.com/spf13/viper"
 	"github.com/tarm/serial"
 )
-
-var gbot = gobot.NewGobot()
 
 func init() {
 	log.SetHandler(cli.New(os.Stdout))
@@ -48,8 +45,8 @@ func init() {
 
 func main() {
 	var (
-		trtl *trtl
-		js   *evdev.InputDevice
+		arduino *serial.Port
+		js      *evdev.InputDevice
 
 		err error
 	)
@@ -63,14 +60,14 @@ func main() {
 	})
 
 	for range time.Tick(time.Second) {
-		if arduino, err := serial.OpenPort(&serial.Config{Name: serialPort, Baud: baud}); err != nil {
+		if arduino, err = serial.OpenPort(&serial.Config{Name: serialPort, Baud: baud}); err != nil {
 			ctx.WithError(err).Fatal("Can't connect to Arduino")
 		} else {
 			ctx.Info("Arduino connected")
-			trtl = &trtl{arduino: arduino}
 			break
 		}
 	}
+	trtl := &trtl{arduino: arduino}
 
 	for range time.Tick(time.Second) {
 		joystickPath := "/dev/input/by-id/usb-Sony_PLAYSTATION_R_3_Controller-event-joystick"
@@ -140,8 +137,6 @@ func main() {
 
 				// Led
 				default:
-					trtl.ledOn()
-
 					log.WithField("scancode", key.Scancode).Warn("unknown key")
 				}
 			}
@@ -171,14 +166,6 @@ func mustSend(w io.Writer, b byte) {
 
 type trtl struct {
 	arduino *serial.Port
-}
-
-func (t *trtl) ledOn() {
-	mustSend(t.arduino, 'c')
-}
-
-func (t *trtl) ledOff() {
-	mustSend(t.arduino, 'x')
 }
 
 func (t *trtl) drive(d direction) {
@@ -249,4 +236,12 @@ func (t *trtl) pullerRetract() {
 }
 func (t *trtl) pullerContract() {
 	mustSend(t.arduino, 'w')
+}
+
+func (t *trtl) ledOn() {
+	mustSend(t.arduino, 'c')
+}
+
+func (t *trtl) ledOff() {
+	mustSend(t.arduino, 'x')
 }

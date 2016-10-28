@@ -44,9 +44,9 @@ int motor_left_forward = 7;
 
 int motor_right_enable = 11;
 int motor_right_backward = 12;
-int motor_right_forward = 13;
+int motor_right_forward = 8;
 
-int wifi = 0;
+int wifi = 1;
 
 void setup() {
     camera_servo_X.attach(camera_servo_X_pin);
@@ -223,4 +223,3 @@ void puller_contract() {
     grabber_servo.detach();
     puller_servo.detach();
 }
-
