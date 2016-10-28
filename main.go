@@ -39,6 +39,7 @@ func init() {
 	viper.SetConfigName("trtl")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
+	viper.AddConfigPath("$HOME")
 	switch err := viper.ReadInConfig(); {
 	case err != nil && !os.IsNotExist(err):
 		log.WithError(err).Fatal("Error reading config")
@@ -46,20 +47,39 @@ func init() {
 }
 
 func main() {
-	log.Info("opening connection")
-	arduino, err := serial.OpenPort(&serial.Config{Name: viper.GetString("serial-port"), Baud: viper.GetInt("baud")})
-	if err != nil {
-		log.WithError(err).Fatal("Can't connect to Arduino")
-	}
-	trtl := &trtl{arduino: arduino}
-	log.Info("Arduino connected")
+	var (
+		trtl *trtl
+		js   *evdev.InputDevice
 
-	var js *evdev.InputDevice
+		err error
+	)
+
+	serialPort := viper.GetString("serial-port")
+	baud := viper.GetInt("baud")
+
+	ctx := log.WithFields(log.Fields{
+		"serial device": serialPort,
+		"baud":          baud,
+	})
+
 	for range time.Tick(time.Second) {
-		if js, err = evdev.Open("/dev/input/by-id/usb-Sony_PLAYSTATION_R_3_Controller-event-joystick"); err != nil {
-			log.WithError(err).Error("failed to connect to joystick")
+		if arduino, err := serial.OpenPort(&serial.Config{Name: serialPort, Baud: baud}); err != nil {
+			ctx.WithError(err).Fatal("Can't connect to Arduino")
 		} else {
-			log.Info("joystick connected")
+			ctx.Info("Arduino connected")
+			trtl = &trtl{arduino: arduino}
+			break
+		}
+	}
+
+	for range time.Tick(time.Second) {
+		joystickPath := "/dev/input/by-id/usb-Sony_PLAYSTATION_R_3_Controller-event-joystick"
+		ctx = log.WithField("path", joystickPath)
+
+		if js, err = evdev.Open(joystickPath); err != nil {
+			ctx.WithError(err).Error("Failed to connect to joystick")
+		} else {
+			ctx.Info("Joystick connected")
 			break
 		}
 	}
@@ -67,7 +87,8 @@ func main() {
 	for {
 		events, err := js.Read()
 		if err != nil {
-			log.WithError(err).Error("Failed to read joystick")
+			ctx.WithError(err).Error("Failed to read joystick event")
+			continue
 		}
 
 		for _, event := range events {
@@ -137,10 +158,6 @@ const (
 	left
 )
 
-type trtl struct {
-	arduino *serial.Port
-}
-
 func send(w io.Writer, b byte) (err error) {
 	_, err = w.Write([]byte{b})
 	return
@@ -150,6 +167,10 @@ func mustSend(w io.Writer, b byte) {
 	if err := send(w, b); err != nil {
 		log.WithError(err).WithField("byte", b).Fatal("Failed to send byte")
 	}
+}
+
+type trtl struct {
+	arduino *serial.Port
 }
 
 func (t *trtl) ledOn() {
